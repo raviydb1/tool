@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Compressor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .preview-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .slider-container {
+            margin: 10px 0;
+        }
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Compressor</h1>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <div class="preview-container">
+            <img id="previewImage" class="preview-image" alt="Preview">
+        </div>
+
+        <div class="controls">
+            <div class="slider-container">
+                Quality (0-1): <input type="range" id="quality" min="0" max="1" step="0.1" value="0.8">
+                <span id="qualityValue">0.8</span>
+            </div>
+            <div class="slider-container">
+                Scale (%): <input type="range" id="scale" min="10" max="100" value="100">
+                <span id="scaleValue">100</span>
+            </div>
+            <button onclick="compressImage()">Compress Image</button>
+            <a id="downloadBtn" class="download-btn">Download Compressed Image</a>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const previewImage = document.getElementById('previewImage');
+        const qualitySlider = document.getElementById('quality');
+        const scaleSlider = document.getElementById('scale');
+        const qualityValue = document.getElementById('qualityValue');
+        const scaleValue = document.getElementById('scaleValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Update slider values display
+        qualitySlider.oninput = () => qualityValue.textContent = qualitySlider.value;
+        scaleSlider.oninput = () => scaleValue.textContent = scaleSlider.value;
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function compressImage() {
+            if (!fileInput.files[0]) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            const quality = parseFloat(qualitySlider.value);
+            const scale = parseFloat(scaleSlider.value) / 100;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Calculate new dimensions
+                    const width = img.width * scale;
+                    const height = img.height * scale;
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // Draw image with new dimensions
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to compressed JPEG
+                    canvas.toBlob(function(blob) {
+                        const compressedUrl = URL.createObjectURL(blob);
+                        downloadBtn.href = compressedUrl;
+                        downloadBtn.download = `compressed_${fileInput.files[0].name}`;
+                        downloadBtn.style.display = 'inline-block';
+                        
+                        // Show compressed image preview
+                        previewImage.src = compressedUrl;
+                    }, 'image/jpeg', quality);
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(fileInput.files[0]);
+        }
+    </script>
+</body>
+</html>
